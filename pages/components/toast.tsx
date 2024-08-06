@@ -1,6 +1,6 @@
 // components/Toast.tsx
 import React, { useState, useEffect } from "react";
-import styles from "./Toast.module.css";
+import styles from "./toast.module.css";
 
 interface ToastProps {
   message: string;
