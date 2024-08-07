@@ -5,7 +5,7 @@ const schema = a.schema({
     .model({
       title: a.string().required(),
       id: a.string().required(),
-      description: a.json(),
+      description: a.json().array(),
       url: a.string().required(),
       thumbnail: a.string(),
       channel: a.string(),
