@@ -8,15 +8,24 @@ import {
   DefaultVideoLayout,
 } from "@vidstack/react/player/layouts/default";
 
-export default function Viewer() {
+export default function Viewer({
+  url,
+  title,
+  thumbnail,
+}: {
+  url: string;
+  title: string;
+  thumbnail: string | null;
+}) {
   return (
-    <MediaPlayer
-      title="Sprite Fight"
-      src="https://files.vidstack.io/sprite-fight/720p.mp4"
-    >
+    <MediaPlayer title={title} src={url}>
       <MediaProvider />
       <DefaultVideoLayout
-        thumbnails="https://files.vidstack.io/sprite-fight/thumbnails.vtt"
+        thumbnails={
+          thumbnail
+            ? thumbnail
+            : "https://files.vidstack.io/sprite-fight/thumbnails.vtt"
+        }
         icons={defaultLayoutIcons}
       />
     </MediaPlayer>

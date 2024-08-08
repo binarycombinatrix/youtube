@@ -1,11 +1,15 @@
 // import { useRouter } from "next/router";
-import VideoPlayer from "../components/videoplayer";
-import { getUrl } from "aws-amplify/storage";
-// pages/video/[path].tsx
 import { GetStaticPaths, GetStaticProps } from "next";
+import { getUrl } from "aws-amplify/storage";
+import { generateClient } from "aws-amplify/api";
+import { type Schema } from "@/amplify/data/resource";
+import VideoPlayer from "../components/videoplayer";
+// pages/video/[path].tsx
+
+const client = generateClient<Schema>();
 
 interface VideoProps {
-  path: string;
+  data: Schema["Video"]["type"] | null;
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
@@ -26,30 +30,63 @@ export const getStaticProps: GetStaticProps<VideoProps> = async ({
 }) => {
   const { path } = params as { path: string };
 
-  // Fetch video data based on the path
-  // const videoData = await fetch(`https://api.example.com/videos/${path}`)
-  //   .then((res) => res.json())
-  //   .catch(() => null);
+  // path is the video id
+  const pathArr = path.split("_");
+  const videoId = pathArr.pop();
+  const videoTitle = pathArr.join(" ");
 
-  // // If no data found, you can return a 404 page
-  // if (!videoData) {
-  //   return {
-  //     notFound: true,
-  //   };
-  // }
+  try {
+    if (videoId && videoTitle) {
+      const { data, errors } = await client.models.Video.get({
+        title: videoTitle,
+        id: videoId,
+      });
+
+      if (errors) {
+        console.error(errors);
+      } else if (data) {
+        const bucketUrl = await getUrl({
+          path: data?.url ?? "",
+
+          options: { expiresIn: 3600 },
+        });
+
+        if (bucketUrl?.url?.toString() != "") {
+          data.url = bucketUrl?.url?.toString();
+        } else {
+          throw new Error("url not found");
+        }
+        console.log("data from dynamoDB =>", data);
+        return {
+          props: {
+            data,
+          },
+          revalidate: 3600, // Revalidate every 60 seconds
+        };
+      }
+    }
+    // console.log("title=>", videoTitle, "id=>", videoId);
+  } catch (error) {
+    console.log("error=>", error);
+  }
 
   return {
     props: {
-      path,
+      data: null,
     },
-    // revalidate: 60, // Revalidate every 60 seconds
+    revalidate: 3600, // Revalidate every 60 seconds
   };
 };
 
-const VideoPage = ({ path }: VideoProps) => {
+const VideoPage = ({ data }: VideoProps) => {
   return (
     <div>
-      <h1>{path}</h1>
+      <h1>{data?.title ?? ""}</h1>
+      <VideoPlayer
+        url={data?.url ?? ""}
+        title={data?.title ?? ""}
+        thumbnail={data?.thumbnail ?? ""}
+      />
       {/* <p>{videoData.description}</p> */}
     </div>
   );
